@@ -14,13 +14,15 @@ import java.util.Optional;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Optional<Product> findByName(String name);
-    Optional<Product> findByReference(String reference);
+
 
     List<Product> findByNameContainingIgnoreCase(String name);
-    List<Product> findByReferenceContainingIgnoreCase(String reference);
 
-    @Query("SELECT p FROM Product p WHERE p.name LIKE %:searchTerm% OR p.reference LIKE %:searchTerm%")
-    Page<Product> findByNameOrReferenceContaining(@Param("searchTerm") String searchTerm, Pageable pageable);
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.billOfMaterials b LEFT JOIN FETCH b.material WHERE p.id = :id")
+    Optional<Product> findByIdWithBillOfMaterials(@Param("id") Long id);
+
+    @Query("SELECT p FROM Product p WHERE p.name LIKE %:searchTerm% ")
+    Page<Product> findByNameContaining(@Param("searchTerm") String searchTerm, Pageable pageable);
 
     @Query("SELECT COUNT(po) FROM ProductionOrder po WHERE po.product.id = :productId AND po.status != 'COMPLETED'")
     Integer countActiveProductionOrdersByProductId(@Param("productId") Long productId);

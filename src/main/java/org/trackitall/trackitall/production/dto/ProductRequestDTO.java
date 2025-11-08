@@ -10,7 +10,7 @@ public class ProductRequestDTO {
     @NotBlank(message = "Le nom est obligatoire")
     private String name;
 
-    private String reference;
+
 
     @NotNull(message = "Le temps de production est obligatoire")
     private Integer productionTime;

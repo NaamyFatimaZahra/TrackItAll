@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -86,8 +87,8 @@ public class DeliveryServiceImpl implements IDeliveryService {
         delivery.setStatus(org.trackitall.trackitall.enums.DeliveryStatus.valueOf(status));
 
         // Si la livraison est marquée comme livrée, mettre à jour la date de livraison
-        if ("DELIVERED".equals(status)) {
-            delivery.setDeliveryDate(java.time.LocalDate.now());
+        if (org.trackitall.trackitall.enums.DeliveryStatus.LIVREE.name().equals(status)) {
+            delivery.setDeliveryDate(LocalDate.now());
         }
 
         Delivery updatedDelivery = deliveryRepository.save(delivery);
@@ -97,7 +98,7 @@ public class DeliveryServiceImpl implements IDeliveryService {
     private DeliveryResponseDTO enrichDeliveryResponse(Delivery delivery) {
         DeliveryResponseDTO response = deliveryMapper.toResponseDTO(delivery);
 
-        // Calculer le coût total
+        // Calculer le coût total (coût de livraison + coût des produits)
         Double totalCost = delivery.getCost() + (delivery.getOrder().getProduct().getCost() * delivery.getOrder().getQuantity());
         response.setTotalCost(totalCost);
 

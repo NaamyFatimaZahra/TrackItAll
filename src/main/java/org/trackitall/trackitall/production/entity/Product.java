@@ -21,9 +21,6 @@ public class Product {
     @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(unique = true)
-    private String reference;
-
     @NotNull
     @Column(nullable = false)
     private Integer productionTime;
@@ -36,7 +33,7 @@ public class Product {
     @Column(nullable = false)
     private Integer stock;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private List<BillOfMaterial> billOfMaterials;
 
     @OneToMany(mappedBy = "product")

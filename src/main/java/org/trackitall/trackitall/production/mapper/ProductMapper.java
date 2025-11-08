@@ -7,7 +7,8 @@ import org.trackitall.trackitall.production.dto.ProductRequestDTO;
 import org.trackitall.trackitall.production.dto.ProductResponseDTO;
 import org.trackitall.trackitall.production.entity.Product;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring",uses = {BillOfMaterialMapper.class})
+
 public interface ProductMapper {
 
     @Mapping(target = "id", ignore = true)

@@ -37,7 +37,8 @@ public class OrderServiceImpl implements IOrderService {
         Order existingOrder = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Commande non trouvée avec l'ID: " + id));
 
-        if (!"PREPARING".equals(existingOrder.getStatus().name())) {
+        // Vérifier si la commande peut être modifiée (seulement si elle est en préparation)
+        if (!org.trackitall.trackitall.enums.OrderStatus.EN_PREPARATION.equals(existingOrder.getStatus())) {
             throw new RuntimeException("Impossible de modifier une commande déjà expédiée");
         }
 
@@ -52,7 +53,8 @@ public class OrderServiceImpl implements IOrderService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Commande non trouvée avec l'ID: " + id));
 
-        if (!"PREPARING".equals(order.getStatus().name())) {
+        // Vérifier si la commande peut être annulée (seulement si elle est en préparation)
+        if (!org.trackitall.trackitall.enums.OrderStatus.EN_PREPARATION.equals(order.getStatus())) {
             throw new RuntimeException("Impossible d'annuler une commande déjà expédiée");
         }
 
@@ -96,7 +98,7 @@ public class OrderServiceImpl implements IOrderService {
     private OrderResponseDTO enrichOrderResponse(Order order) {
         OrderResponseDTO response = orderMapper.toResponseDTO(order);
 
-        // Ajouter les informations de livraison
+        // Ajouter les informations de livraison si elles existent
         deliveryRepository.findByOrderId(order.getId())
                 .ifPresent(delivery -> {
                     // Vous devrez créer un DeliveryMapper pour convertir l'entité Delivery en DTO

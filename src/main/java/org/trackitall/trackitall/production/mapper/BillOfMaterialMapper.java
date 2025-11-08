@@ -12,13 +12,13 @@ public interface BillOfMaterialMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "product", ignore = true)
-    @Mapping(target = "material", source = "materialId")
+    @Mapping(target = "material", ignore = true)
     BillOfMaterial toEntity(BillOfMaterialRequestDTO dto);
 
     BillOfMaterialResponseDTO toResponseDTO(BillOfMaterial entity);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "product", ignore = true)
-    @Mapping(target = "material", source = "materialId")
+    @Mapping(target = "material", ignore = true)
     void updateEntityFromDTO(BillOfMaterialRequestDTO dto, @MappingTarget BillOfMaterial entity);
 }

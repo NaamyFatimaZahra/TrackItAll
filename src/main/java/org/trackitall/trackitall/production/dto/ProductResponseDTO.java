@@ -7,7 +7,7 @@ import java.util.List;
 public class ProductResponseDTO {
     private Long id;
     private String name;
-    private String reference;
+
     private Integer productionTime;
     private Double cost;
     private Integer stock;

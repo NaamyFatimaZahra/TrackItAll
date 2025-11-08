@@ -55,8 +55,15 @@ public class ProductionOrderController {
         return ResponseEntity.ok(order);
     }
 
+
     @GetMapping("/status/{status}")
     public ResponseEntity<List<ProductionOrderResponseDTO>> getProductionOrdersByStatus(@PathVariable String status) {
+        List<ProductionOrderResponseDTO> orders = productionOrderService.getProductionOrdersByStatus(status);
+        return ResponseEntity.ok(orders);
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<List<ProductionOrderResponseDTO>> getProductionOrdersByStatusParam(@RequestParam String status) {
         List<ProductionOrderResponseDTO> orders = productionOrderService.getProductionOrdersByStatus(status);
         return ResponseEntity.ok(orders);
     }

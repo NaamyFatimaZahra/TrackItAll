@@ -64,9 +64,5 @@ public class ProductController {
         return ResponseEntity.ok(product);
     }
 
-    @GetMapping("/reference/{reference}")
-    public ResponseEntity<ProductResponseDTO> getProductByReference(@PathVariable String reference) {
-        ProductResponseDTO product = productService.getProductByReference(reference);
-        return ResponseEntity.ok(product);
-    }
+
 }

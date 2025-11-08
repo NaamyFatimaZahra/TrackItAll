@@ -3,20 +3,23 @@ package org.trackitall.trackitall.delivery.service;
 import org.trackitall.trackitall.delivery.dto.CustomerRequestDTO;
 import org.trackitall.trackitall.delivery.dto.CustomerResponseDTO;
 import org.trackitall.trackitall.delivery.entity.Customer;
-import org.trackitall.trackitall.delivery.mapper.OrderMapper;
+import org.trackitall.trackitall.delivery.mapper.CustomerMapper;
 import org.trackitall.trackitall.delivery.repository.CustomerRepository;
+import org.trackitall.trackitall.delivery.service.ICustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class CustomerServiceImpl implements ICustomerService {
 
     private final CustomerRepository customerRepository;
-    private final OrderMapper customerMapper;
+    private final CustomerMapper customerMapper;
 
     @Override
     @Transactional
