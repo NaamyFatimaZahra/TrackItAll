@@ -1,5 +1,6 @@
 package org.trackitall.trackitall.production.controller;
 
+import org.trackitall.trackitall.enums.ProductionOrderStatus;
 import org.trackitall.trackitall.production.dto.ProductionOrderRequestDTO;
 import org.trackitall.trackitall.production.dto.ProductionOrderResponseDTO;
 import org.trackitall.trackitall.production.service.IProductionOrderService;
@@ -55,15 +56,8 @@ public class ProductionOrderController {
         return ResponseEntity.ok(order);
     }
 
-
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<ProductionOrderResponseDTO>> getProductionOrdersByStatus(@PathVariable String status) {
-        List<ProductionOrderResponseDTO> orders = productionOrderService.getProductionOrdersByStatus(status);
-        return ResponseEntity.ok(orders);
-    }
-
-    @GetMapping("/status")
-    public ResponseEntity<List<ProductionOrderResponseDTO>> getProductionOrdersByStatusParam(@RequestParam String status) {
+    public ResponseEntity<List<ProductionOrderResponseDTO>> getProductionOrdersByStatus(@PathVariable ProductionOrderStatus status) {
         List<ProductionOrderResponseDTO> orders = productionOrderService.getProductionOrdersByStatus(status);
         return ResponseEntity.ok(orders);
     }
@@ -71,7 +65,7 @@ public class ProductionOrderController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<ProductionOrderResponseDTO> updateProductionOrderStatus(
             @PathVariable Long id,
-            @RequestParam String status) {
+            @RequestParam ProductionOrderStatus status) {
         ProductionOrderResponseDTO updatedOrder = productionOrderService.updateProductionOrderStatus(id, status);
         return ResponseEntity.ok(updatedOrder);
     }

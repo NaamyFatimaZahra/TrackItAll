@@ -1,4 +1,4 @@
-package org.trackitall.trackitall.production.service.impl;
+package org.trackitall.trackitall.production.service;
 
 import org.trackitall.trackitall.production.dto.ProductRequestDTO;
 import org.trackitall.trackitall.production.dto.ProductResponseDTO;

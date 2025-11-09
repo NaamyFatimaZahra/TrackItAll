@@ -13,7 +13,7 @@ public interface IProductionOrderService {
     void cancelProductionOrder(Long id);
     Page<ProductionOrderResponseDTO> getAllProductionOrders(Pageable pageable);
     ProductionOrderResponseDTO getProductionOrderById(Long id);
-    List<ProductionOrderResponseDTO> getProductionOrdersByStatus(String status);
-    ProductionOrderResponseDTO updateProductionOrderStatus(Long id, String status);
+    List<ProductionOrderResponseDTO> getProductionOrdersByStatus(ProductionOrderStatus status);
+    ProductionOrderResponseDTO updateProductionOrderStatus(Long id, ProductionOrderStatus status);
     Boolean checkMaterialsAvailability(Long productionOrderId);
 }

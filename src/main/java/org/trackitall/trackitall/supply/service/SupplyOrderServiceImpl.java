@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+//allArgumentConstructor
 public class SupplyOrderServiceImpl implements ISupplyOrderService {
 
     private final SupplyOrderRepository supplyOrderRepository;

@@ -1,5 +1,6 @@
 package org.trackitall.trackitall.production.repository;
 
+import org.trackitall.trackitall.enums.ProductionOrderStatus;
 import org.trackitall.trackitall.production.entity.ProductionOrder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,7 +15,7 @@ public interface ProductionOrderRepository extends JpaRepository<ProductionOrder
 
     Page<ProductionOrder> findAll(Pageable pageable);
 
-    List<ProductionOrder> findByStatus(String status);
+    List<ProductionOrder> findByStatus(ProductionOrderStatus status);
 
     @Query("SELECT po FROM ProductionOrder po WHERE po.product.id = :productId")
     List<ProductionOrder> findByProductId(@Param("productId") Long productId);

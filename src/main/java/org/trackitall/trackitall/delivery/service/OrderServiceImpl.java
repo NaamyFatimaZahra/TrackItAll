@@ -3,10 +3,14 @@ package org.trackitall.trackitall.delivery.service;
 import org.trackitall.trackitall.delivery.dto.OrderRequestDTO;
 import org.trackitall.trackitall.delivery.dto.OrderResponseDTO;
 import org.trackitall.trackitall.delivery.entity.Order;
+import org.trackitall.trackitall.delivery.mapper.DeliveryMapper;
 import org.trackitall.trackitall.delivery.mapper.OrderMapper;
 import org.trackitall.trackitall.delivery.repository.OrderRepository;
 import org.trackitall.trackitall.delivery.repository.DeliveryRepository;
 import org.trackitall.trackitall.delivery.service.IOrderService;
+import org.trackitall.trackitall.exception.BusinessException;
+import org.trackitall.trackitall.exception.NotFoundException;
+import org.trackitall.trackitall.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,89 +26,140 @@ public class OrderServiceImpl implements IOrderService {
     private final OrderRepository orderRepository;
     private final DeliveryRepository deliveryRepository;
     private final OrderMapper orderMapper;
+    private final DeliveryMapper deliveryMapper;
 
     @Override
     @Transactional
     public OrderResponseDTO createOrder(OrderRequestDTO orderDTO) {
-        Order order = orderMapper.toEntity(orderDTO);
-        Order savedOrder = orderRepository.save(order);
-        return enrichOrderResponse(savedOrder);
+        try {
+            Order order = orderMapper.toEntity(orderDTO);
+            Order savedOrder = orderRepository.save(order);
+            return enrichOrderResponse(savedOrder);
+        } catch (Exception e) {
+            throw new BusinessException("Erreur lors de la création de la commande: " + e.getMessage());
+        }
     }
 
     @Override
     @Transactional
     public OrderResponseDTO updateOrder(Long id, OrderRequestDTO orderDTO) {
-        Order existingOrder = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Commande non trouvée avec l'ID: " + id));
+        try {
+            Order existingOrder = orderRepository.findById(id)
+                    .orElseThrow(() -> new NotFoundException("Commande non trouvée avec l'ID: " + id));
 
-        // Vérifier si la commande peut être modifiée (seulement si elle est en préparation)
-        if (!org.trackitall.trackitall.enums.OrderStatus.EN_PREPARATION.equals(existingOrder.getStatus())) {
-            throw new RuntimeException("Impossible de modifier une commande déjà expédiée");
+            if (!org.trackitall.trackitall.enums.OrderStatus.EN_PREPARATION.equals(existingOrder.getStatus())) {
+                throw new ValidationException("Impossible de modifier une commande déjà expédiée");
+            }
+            orderMapper.updateEntityFromDTO(orderDTO, existingOrder);
+            Order updatedOrder = orderRepository.save(existingOrder);
+            return enrichOrderResponse(updatedOrder);
+        } catch (NotFoundException | ValidationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException("Erreur lors de la mise à jour de la commande: " + e.getMessage());
         }
-
-        orderMapper.updateEntityFromDTO(orderDTO, existingOrder);
-        Order updatedOrder = orderRepository.save(existingOrder);
-        return enrichOrderResponse(updatedOrder);
     }
 
     @Override
     @Transactional
     public void cancelOrder(Long id) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Commande non trouvée avec l'ID: " + id));
+        try {
+            Order order = orderRepository.findById(id)
+                    .orElseThrow(() -> new NotFoundException("Commande non trouvée avec l'ID: " + id));
 
-        // Vérifier si la commande peut être annulée (seulement si elle est en préparation)
-        if (!org.trackitall.trackitall.enums.OrderStatus.EN_PREPARATION.equals(order.getStatus())) {
-            throw new RuntimeException("Impossible d'annuler une commande déjà expédiée");
+            if (!org.trackitall.trackitall.enums.OrderStatus.EN_PREPARATION.equals(order.getStatus())) {
+                throw new ValidationException("Impossible d'annuler une commande déjà expédiée");
+            }
+
+            orderRepository.delete(order);
+        } catch (NotFoundException | ValidationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException("Erreur lors de l'annulation de la commande: " + e.getMessage());
         }
-
-        orderRepository.delete(order);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponseDTO> getAllOrders(Pageable pageable) {
-        return orderRepository.findAll(pageable)
-                .map(this::enrichOrderResponse);
+        try {
+            return orderRepository.findAll(pageable)
+                    .map(this::enrichOrderResponse);
+        } catch (Exception e) {
+            throw new BusinessException("Erreur lors de la récupération des commandes: " + e.getMessage());
+        }
     }
 
     @Override
     @Transactional(readOnly = true)
     public OrderResponseDTO getOrderById(Long id) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Commande non trouvée avec l'ID: " + id));
-        return enrichOrderResponse(order);
+        try {
+            Order order = orderRepository.findById(id)
+                    .orElseThrow(() -> new NotFoundException("Commande non trouvée avec l'ID: " + id));
+            return enrichOrderResponse(order);
+        } catch (NotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException("Erreur lors de la récupération de la commande: " + e.getMessage());
+        }
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<OrderResponseDTO> getOrdersByStatus(String status) {
-        return orderRepository.findByStatus(status).stream()
-                .map(this::enrichOrderResponse)
-                .collect(Collectors.toList());
+        try {
+
+            try {
+                org.trackitall.trackitall.enums.OrderStatus.valueOf(status);
+            } catch (IllegalArgumentException e) {
+                throw new ValidationException("Statut invalide: " + status);
+            }
+
+            return orderRepository.findByStatus(status).stream()
+                    .map(this::enrichOrderResponse)
+                    .collect(Collectors.toList());
+        } catch (ValidationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException("Erreur lors de la récupération des commandes par statut: " + e.getMessage());
+        }
     }
 
     @Override
     @Transactional
     public OrderResponseDTO updateOrderStatus(Long id, String status) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Commande non trouvée avec l'ID: " + id));
+        try {
+            Order order = orderRepository.findById(id)
+                    .orElseThrow(() -> new NotFoundException("Commande non trouvée avec l'ID: " + id));
 
-        order.setStatus(org.trackitall.trackitall.enums.OrderStatus.valueOf(status));
-        Order updatedOrder = orderRepository.save(order);
-        return enrichOrderResponse(updatedOrder);
+            try {
+                order.setStatus(org.trackitall.trackitall.enums.OrderStatus.valueOf(status));
+            } catch (IllegalArgumentException e) {
+                throw new ValidationException("Statut invalide: " + status);
+            }
+
+            Order updatedOrder = orderRepository.save(order);
+            return enrichOrderResponse(updatedOrder);
+        } catch (NotFoundException | ValidationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException("Erreur lors de la mise à jour du statut de la commande: " + e.getMessage());
+        }
     }
 
     private OrderResponseDTO enrichOrderResponse(Order order) {
-        OrderResponseDTO response = orderMapper.toResponseDTO(order);
+        try {
+            OrderResponseDTO response = orderMapper.toResponseDTO(order);
 
-        // Ajouter les informations de livraison si elles existent
-        deliveryRepository.findByOrderId(order.getId())
-                .ifPresent(delivery -> {
-                    // Vous devrez créer un DeliveryMapper pour convertir l'entité Delivery en DTO
-                    // response.setDelivery(deliveryMapper.toResponseDTO(delivery));
-                });
+            deliveryRepository.findByOrderId(order.getId())
+                    .ifPresent(delivery -> {
 
-        return response;
+                         response.setDelivery(deliveryMapper.toResponseDTO(delivery));
+                    });
+
+            return response;
+        } catch (Exception e) {
+            throw new BusinessException("Erreur lors de l'enrichissement de la réponse de la commande: " + e.getMessage());
+        }
     }
 }

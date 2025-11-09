@@ -1,5 +1,6 @@
 package org.trackitall.trackitall.production.service;
 
+import org.trackitall.trackitall.enums.ProductionOrderStatus;
 import org.trackitall.trackitall.production.dto.ProductionOrderRequestDTO;
 import org.trackitall.trackitall.production.dto.ProductionOrderResponseDTO;
 import org.trackitall.trackitall.production.entity.ProductionOrder;
@@ -57,8 +58,7 @@ public class ProductionOrderServiceImpl implements IProductionOrderService {
             ProductionOrder existingOrder = productionOrderRepository.findById(id)
                     .orElseThrow(() -> new NotFoundException("Ordre de production non trouvé avec l'ID: " + id));
 
-            // Vérifier si l'ordre peut être modifié (seulement s'il est en attente)
-            if (!org.trackitall.trackitall.enums.ProductionOrderStatus.EN_ATTENTE.equals(existingOrder.getStatus())) {
+            if (!ProductionOrderStatus.EN_ATTENTE.equals(existingOrder.getStatus())) {
                 throw new ValidationException("Impossible de modifier un ordre de production déjà commencé");
             }
 
@@ -84,8 +84,7 @@ public class ProductionOrderServiceImpl implements IProductionOrderService {
             ProductionOrder productionOrder = productionOrderRepository.findById(id)
                     .orElseThrow(() -> new NotFoundException("Ordre de production non trouvé avec l'ID: " + id));
 
-            // Vérifier si l'ordre peut être annulé (seulement s'il est en attente)
-            if (!org.trackitall.trackitall.enums.ProductionOrderStatus.EN_ATTENTE.equals(productionOrder.getStatus())) {
+            if (!ProductionOrderStatus.EN_ATTENTE.equals(productionOrder.getStatus())) {
                 throw new ValidationException("Impossible d'annuler un ordre de production déjà commencé");
             }
 
@@ -134,15 +133,8 @@ public class ProductionOrderServiceImpl implements IProductionOrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProductionOrderResponseDTO> getProductionOrdersByStatus(String status) {
+    public List<ProductionOrderResponseDTO> getProductionOrdersByStatus(ProductionOrderStatus status) {
         try {
-
-            try {
-                org.trackitall.trackitall.enums.ProductionOrderStatus.valueOf(status);
-            } catch (IllegalArgumentException e) {
-                throw new ValidationException("Statut invalide: " + status);
-            }
-
             return productionOrderRepository.findByStatus(status).stream()
                     .map(order -> {
                         ProductionOrderResponseDTO response = productionOrderMapper.toResponseDTO(order);
@@ -151,8 +143,6 @@ public class ProductionOrderServiceImpl implements IProductionOrderService {
                         return response;
                     })
                     .collect(Collectors.toList());
-        } catch (ValidationException e) {
-            throw e;
         } catch (Exception e) {
             throw new BusinessException("Erreur lors de la récupération des ordres de production par statut: " + e.getMessage());
         }
@@ -160,17 +150,12 @@ public class ProductionOrderServiceImpl implements IProductionOrderService {
 
     @Override
     @Transactional
-    public ProductionOrderResponseDTO updateProductionOrderStatus(Long id, String status) {
+    public ProductionOrderResponseDTO updateProductionOrderStatus(Long id, ProductionOrderStatus status) {
         try {
             ProductionOrder productionOrder = productionOrderRepository.findById(id)
                     .orElseThrow(() -> new NotFoundException("Ordre de production non trouvé avec l'ID: " + id));
 
-            try {
-                productionOrder.setStatus(org.trackitall.trackitall.enums.ProductionOrderStatus.valueOf(status));
-            } catch (IllegalArgumentException e) {
-                throw new ValidationException("Statut invalide: " + status);
-            }
-
+            productionOrder.setStatus(status);
             ProductionOrder updatedOrder = productionOrderRepository.save(productionOrder);
 
             ProductionOrderResponseDTO response = productionOrderMapper.toResponseDTO(updatedOrder);
@@ -178,7 +163,7 @@ public class ProductionOrderServiceImpl implements IProductionOrderService {
             response.setEstimatedDuration(calculateEstimatedDuration(updatedOrder));
 
             return response;
-        } catch (NotFoundException | ValidationException e) {
+        } catch (NotFoundException e) {
             throw e;
         } catch (Exception e) {
             throw new BusinessException("Erreur lors de la mise à jour du statut de l'ordre de production: " + e.getMessage());
