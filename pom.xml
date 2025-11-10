@@ -109,6 +109,8 @@
                 </configuration>
             </plugin>
         </plugins>
+        <finalName>trackitall</finalName>
+        
     </build>
 
 </project>
