@@ -34,7 +34,7 @@ public class OrderServiceImpl implements IOrderService {
         try {
             Order order = orderMapper.toEntity(orderDTO);
             Order savedOrder = orderRepository.save(order);
-            return enrichOrderResponse(savedOrder);
+            return orderMapper.toResponseDTO(savedOrder);
         } catch (Exception e) {
             throw new BusinessException("Erreur lors de la création de la commande: " + e.getMessage());
         }
@@ -52,7 +52,7 @@ public class OrderServiceImpl implements IOrderService {
             }
             orderMapper.updateEntityFromDTO(orderDTO, existingOrder);
             Order updatedOrder = orderRepository.save(existingOrder);
-            return enrichOrderResponse(updatedOrder);
+            return orderMapper.toResponseDTO(updatedOrder);
         } catch (NotFoundException | ValidationException e) {
             throw e;
         } catch (Exception e) {
@@ -84,7 +84,7 @@ public class OrderServiceImpl implements IOrderService {
     public Page<OrderResponseDTO> getAllOrders(Pageable pageable) {
         try {
             return orderRepository.findAll(pageable)
-                    .map(this::enrichOrderResponse);
+                    .map(orderMapper::toResponseDTO);
         } catch (Exception e) {
             throw new BusinessException("Erreur lors de la récupération des commandes: " + e.getMessage());
         }
@@ -96,7 +96,7 @@ public class OrderServiceImpl implements IOrderService {
         try {
             Order order = orderRepository.findById(id)
                     .orElseThrow(() -> new NotFoundException("Commande non trouvée avec l'ID: " + id));
-            return enrichOrderResponse(order);
+            return orderMapper.toResponseDTO(order);
         } catch (NotFoundException e) {
             throw e;
         } catch (Exception e) {
@@ -116,7 +116,7 @@ public class OrderServiceImpl implements IOrderService {
             }
 
             return orderRepository.findByStatus(status).stream()
-                    .map(this::enrichOrderResponse)
+                    .map(orderMapper::toResponseDTO)
                     .collect(Collectors.toList());
         } catch (ValidationException e) {
             throw e;
@@ -139,7 +139,7 @@ public class OrderServiceImpl implements IOrderService {
             }
 
             Order updatedOrder = orderRepository.save(order);
-            return enrichOrderResponse(updatedOrder);
+            return orderMapper.toResponseDTO(updatedOrder);
         } catch (NotFoundException | ValidationException e) {
             throw e;
         } catch (Exception e) {
@@ -147,19 +147,5 @@ public class OrderServiceImpl implements IOrderService {
         }
     }
 
-    private OrderResponseDTO enrichOrderResponse(Order order) {
-        try {
-            OrderResponseDTO response = orderMapper.toResponseDTO(order);
 
-            deliveryRepository.findByOrderId(order.getId())
-                    .ifPresent(delivery -> {
-
-                         response.setDelivery(deliveryMapper.toResponseDTO(delivery));
-                    });
-
-            return response;
-        } catch (Exception e) {
-            throw new BusinessException("Erreur lors de l'enrichissement de la réponse de la commande: " + e.getMessage());
-        }
-    }
 }

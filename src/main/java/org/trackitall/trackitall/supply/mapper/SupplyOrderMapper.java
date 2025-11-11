@@ -11,7 +11,6 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {SupplierMapper.class, RawMaterialMapper.class})
 public interface SupplyOrderMapper {
 
-    SupplyOrderMapper INSTANCE = Mappers.getMapper(SupplyOrderMapper.class);
 
     @Mapping(target = "supplier", ignore = true)
     @Mapping(target = "rawMaterials", ignore = true)

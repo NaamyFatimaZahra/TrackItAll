@@ -50,6 +50,8 @@ public class SupplyOrderServiceImpl implements ISupplyOrderService {
                         orderItem.setSupplyOrder(savedOrder);
                         orderItem.setRawMaterial(rawMaterial);
                         orderItem.setQuantity(item.getQuantity());
+                        rawMaterial.setStock(rawMaterial.getStock()-item.getQuantity());
+                        rawMaterialRepository.save(rawMaterial);
                         return orderItem;
                     })
                     .collect(Collectors.toList());
