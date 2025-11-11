@@ -8,6 +8,7 @@ import org.trackitall.trackitall.delivery.mapper.OrderMapper;
 import org.trackitall.trackitall.delivery.repository.OrderRepository;
 import org.trackitall.trackitall.delivery.repository.DeliveryRepository;
 import org.trackitall.trackitall.delivery.service.IOrderService;
+import org.trackitall.trackitall.enums.OrderStatus;
 import org.trackitall.trackitall.exception.BusinessException;
 import org.trackitall.trackitall.exception.NotFoundException;
 import org.trackitall.trackitall.exception.ValidationException;
@@ -47,7 +48,7 @@ public class OrderServiceImpl implements IOrderService {
             Order existingOrder = orderRepository.findById(id)
                     .orElseThrow(() -> new NotFoundException("Commande non trouvée avec l'ID: " + id));
 
-            if (!org.trackitall.trackitall.enums.OrderStatus.EN_PREPARATION.equals(existingOrder.getStatus())) {
+            if (!OrderStatus.EN_PREPARATION.equals(existingOrder.getStatus())) {
                 throw new ValidationException("Impossible de modifier une commande déjà expédiée");
             }
             orderMapper.updateEntityFromDTO(orderDTO, existingOrder);
@@ -67,7 +68,7 @@ public class OrderServiceImpl implements IOrderService {
             Order order = orderRepository.findById(id)
                     .orElseThrow(() -> new NotFoundException("Commande non trouvée avec l'ID: " + id));
 
-            if (!org.trackitall.trackitall.enums.OrderStatus.EN_PREPARATION.equals(order.getStatus())) {
+            if (!OrderStatus.EN_PREPARATION.equals(order.getStatus())) {
                 throw new ValidationException("Impossible d'annuler une commande déjà expédiée");
             }
 
