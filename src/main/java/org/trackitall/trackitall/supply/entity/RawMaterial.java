@@ -28,7 +28,6 @@ public class RawMaterial {
     @Column(nullable = false)
     private String unit;
 
-
     @ManyToMany(mappedBy = "rawMaterials")
     private List<Supplier> suppliers;
 

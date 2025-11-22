@@ -1,5 +1,7 @@
 package org.trackitall.trackitall.supply.service;
 
+import org.trackitall.trackitall.supply.entity.Supplier;
+import org.trackitall.trackitall.supply.repository.SupplierRepository;
 import org.trackitall.trackitall.supply.service.IRawMaterialService;
 import org.trackitall.trackitall.supply.dto.RawMaterialRequestDTO;
 import org.trackitall.trackitall.supply.dto.RawMaterialResponseDTO;
@@ -13,7 +15,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,19 +26,34 @@ import java.util.stream.Collectors;
 public class RawMaterialServiceImpl implements IRawMaterialService {
 
     private final RawMaterialRepository rawMaterialRepository;
+    private final SupplierRepository supplierRepository;
     private final RawMaterialMapper rawMaterialMapper;
 
-    @Override
     @Transactional
+    @Override
     public RawMaterialResponseDTO createRawMaterial(RawMaterialRequestDTO rawMaterialDTO) {
+
         if (rawMaterialRepository.findByName(rawMaterialDTO.getName()).isPresent()) {
             throw new BusinessException("Une matière première avec ce nom existe déjà");
         }
 
         RawMaterial rawMaterial = rawMaterialMapper.toEntity(rawMaterialDTO);
-        RawMaterial saved = rawMaterialRepository.save(rawMaterial);
-        return rawMaterialMapper.toResponseDTOWithStockInfo(saved);
+
+        rawMaterial.setSuppliers(new ArrayList<>());
+
+        rawMaterial = rawMaterialRepository.save(rawMaterial);
+
+        for (Long sp : rawMaterialDTO.getSupplierIds()) {
+            if (sp == null || sp == 0) continue;
+
+            Supplier supplier = supplierRepository.findById(sp)
+                    .orElseThrow(() -> new BusinessException("Supplier id " + sp + " n'existe pas."));
+            supplier.getRawMaterials().add(rawMaterial);
+            rawMaterial.getSuppliers().add(supplier);
+        }
+        return rawMaterialMapper.toResponseDTO(rawMaterial);
     }
+
 
     @Override
     @Transactional
@@ -47,7 +67,7 @@ public class RawMaterialServiceImpl implements IRawMaterialService {
         existing.setUnit(rawMaterialDTO.getUnit());
 
         RawMaterial updated = rawMaterialRepository.save(existing);
-        return rawMaterialMapper.toResponseDTOWithStockInfo(updated);
+        return rawMaterialMapper.toResponseDTO(updated);
     }
 
     @Override
@@ -60,6 +80,8 @@ public class RawMaterialServiceImpl implements IRawMaterialService {
             throw new BusinessException("Impossible de supprimer une matière première utilisée dans des commandes");
         }
 
+        rawMaterial.getSuppliers().forEach(supplier -> supplier.getRawMaterials().remove(rawMaterial));
+        rawMaterial.getSupplyOrders().forEach(order -> order.getRawMaterials().remove(rawMaterial));
         rawMaterialRepository.delete(rawMaterial);
     }
 
@@ -67,14 +89,14 @@ public class RawMaterialServiceImpl implements IRawMaterialService {
     @Transactional(readOnly = true)
     public Page<RawMaterialResponseDTO> getAllRawMaterials(Pageable pageable) {
         return rawMaterialRepository.findAll(pageable)
-                .map(rawMaterialMapper::toResponseDTOWithStockInfo);
+                .map(rawMaterialMapper::toResponseDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<RawMaterialResponseDTO> searchRawMaterials(String name, Pageable pageable) {
         return rawMaterialRepository.findByNameContaining(name, pageable)
-                .map(rawMaterialMapper::toResponseDTOWithStockInfo);
+                .map(rawMaterialMapper::toResponseDTO);
     }
 
     @Override
@@ -82,7 +104,7 @@ public class RawMaterialServiceImpl implements IRawMaterialService {
     public List<RawMaterialResponseDTO> getLowStockMaterials() {
         return rawMaterialRepository.findLowStockMaterials()
                 .stream()
-                .map(rawMaterialMapper::toResponseDTOWithStockInfo)
+                .map(rawMaterialMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
@@ -91,6 +113,6 @@ public class RawMaterialServiceImpl implements IRawMaterialService {
     public RawMaterialResponseDTO getRawMaterialById(Long id) {
         RawMaterial rawMaterial = rawMaterialRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Matière première non trouvée"));
-        return rawMaterialMapper.toResponseDTOWithStockInfo(rawMaterial);
+        return rawMaterialMapper.toResponseDTO(rawMaterial);
     }
 }

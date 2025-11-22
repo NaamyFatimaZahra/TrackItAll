@@ -14,6 +14,8 @@ public interface RawMaterialRepository extends JpaRepository<RawMaterial, Long> 
 
     Page<RawMaterial> findAll(Pageable pageable);
 
+    Optional<RawMaterial> findById(Long id);
+
     Optional<RawMaterial> findByName(String name);
 
     @Query("SELECT rm FROM RawMaterial rm WHERE rm.stock < rm.stockMin")

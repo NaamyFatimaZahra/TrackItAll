@@ -28,4 +28,7 @@ public abstract class ProductionOrderMapper {
     @Mapping(target = "product", source = "productId")
     public abstract void updateEntityFromDTO(ProductionOrderRequestDTO dto, @MappingTarget ProductionOrder entity);
 
+    protected Product map(Long productId) {
+        return productRepository.findById(productId).orElse(null);
+    }
 }

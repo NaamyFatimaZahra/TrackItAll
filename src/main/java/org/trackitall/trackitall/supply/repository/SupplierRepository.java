@@ -14,6 +14,8 @@ public interface SupplierRepository extends JpaRepository<Supplier, Long> {
 
     Page<Supplier> findAll(Pageable pageable);
 
+
+
     Optional<Supplier> findByName(String name);
 
     @Query("SELECT s FROM Supplier s WHERE s.name LIKE %:name%")

@@ -1,7 +1,10 @@
 package org.trackitall.trackitall.exception;
 
+import jakarta.validation.Valid;
+import jakarta.validation.Validation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -12,7 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestControllerAdvice
-public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+public class GlobalExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<Object> handleNotFoundException(NotFoundException ex, WebRequest request) {
@@ -48,5 +51,25 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         body.put("path", request.getDescription(false).replace("uri=", ""));
 
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Object> handleValidationExeption(MethodArgumentNotValidException ex,
+    WebRequest request){
+
+        Map<String,Object> body=new LinkedHashMap<>();
+        body.put("timeStamp",LocalDateTime.now());
+        body.put("status",HttpStatus.BAD_REQUEST.value());
+        body.put("error", "Validation Error");
+
+        Map<String,String> errors=new LinkedHashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(fieldError ->
+                {
+                    errors.put(fieldError.getField(), fieldError.getDefaultMessage());
+                }
+        );
+        body.put("messages",errors);
+        body.put("path",request.getDescription(false).replace("uri=",""));
+        return new ResponseEntity<>(body,HttpStatus.BAD_REQUEST);
     }
 }

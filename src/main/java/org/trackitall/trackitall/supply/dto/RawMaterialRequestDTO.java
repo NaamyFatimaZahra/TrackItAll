@@ -20,5 +20,5 @@ public class RawMaterialRequestDTO {
     @NotBlank(message = "L'unité est obligatoire")
     private String unit;
 
-    private List<Long> supplierIds; // IDs des fournisseurs associés
+    private List<Long> supplierIds;
 }

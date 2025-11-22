@@ -18,8 +18,5 @@ public interface SupplyOrderMapper {
 
     SupplyOrderResponseDTO toResponseDTO(SupplyOrder entity);
 
-    @Mapping(target = "rawMaterial", qualifiedByName = "withStock")
-    SupplyOrderItemResponseDTO toItemResponseDTO(SupplyOrderRawMaterial entity);
 
-    List<SupplyOrderItemResponseDTO> toItemResponseDTOs(List<SupplyOrderRawMaterial> entities);
 }

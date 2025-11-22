@@ -17,6 +17,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.trackitall.trackitall.production.dto.ProductRequestDTO;
+import org.trackitall.trackitall.production.dto.ProductResponseDTO;
+import org.trackitall.trackitall.production.entity.Product;
+import org.trackitall.trackitall.production.mapper.ProductMapper;
+import org.trackitall.trackitall.production.repository.ProductRepository;
+import org.trackitall.trackitall.production.service.IProductService;
+import org.trackitall.trackitall.production.service.ProductServiceImpl;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,12 +36,25 @@ public class OrderServiceImpl implements IOrderService {
     private final DeliveryRepository deliveryRepository;
     private final OrderMapper orderMapper;
     private final DeliveryMapper deliveryMapper;
+    private final ProductRepository productRepository;
+    private final IProductService productService;
+    private final ProductMapper productMapper;
 
     @Override
     @Transactional
     public OrderResponseDTO createOrder(OrderRequestDTO orderDTO) {
         try {
+              ProductResponseDTO product=productService.getProductById(orderDTO.getProductId());
+              if(product.getStock()<orderDTO.getQuantity()){
+                  throw  new BusinessException("la quantity de order est superieur de stock");
+              }
+             product.setStock(product.getStock()-orderDTO.getQuantity());
+              ProductRequestDTO product1=this.toRequest(product);
+              Product product2=productMapper.toEntity(product1);
+              productRepository.save(product2);
+
             Order order = orderMapper.toEntity(orderDTO);
+
             Order savedOrder = orderRepository.save(order);
             return orderMapper.toResponseDTO(savedOrder);
         } catch (Exception e) {
@@ -148,5 +169,12 @@ public class OrderServiceImpl implements IOrderService {
         }
     }
 
-
+     public ProductRequestDTO toRequest(ProductResponseDTO productResponseDTO){
+         ProductRequestDTO productResponseDTO1=new ProductRequestDTO();
+        productResponseDTO1.setStock(productResponseDTO.getStock());
+        productResponseDTO1.setProductionTime(productResponseDTO.getProductionTime());
+        productResponseDTO1.setCost(productResponseDTO.getCost());
+        productResponseDTO1.setName(productResponseDTO.getName());
+        return productResponseDTO1;
+     }
 }

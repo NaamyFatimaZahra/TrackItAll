@@ -1,5 +1,8 @@
 package org.trackitall.trackitall.supply.service;
 
+import org.apache.catalina.LifecycleState;
+import org.trackitall.trackitall.supply.entity.RawMaterial;
+import org.trackitall.trackitall.supply.repository.RawMaterialRepository;
 import org.trackitall.trackitall.supply.service.ISupplierService;
 import org.trackitall.trackitall.supply.dto.SupplierRequestDTO;
 import org.trackitall.trackitall.supply.dto.SupplierResponseDTO;
@@ -14,11 +17,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class SupplierServiceImpl implements ISupplierService {
 
     private final SupplierRepository supplierRepository;
+    private final RawMaterialRepository rawMaterialRepository;
     private final SupplierMapper supplierMapper;
 
     @Override
@@ -29,7 +36,20 @@ public class SupplierServiceImpl implements ISupplierService {
         }
 
         Supplier supplier = supplierMapper.toEntity(supplierDTO);
+        if (supplier.getRawMaterials() == null) {
+            supplier.setRawMaterials(new ArrayList<>());
+        }
+        List<Integer> rawMaterialId=supplierDTO.getRawMaterialId();
+        rawMaterialId.forEach(rm->{
+           if (rm!=0){
+               RawMaterial rawMaterial=rawMaterialRepository.findById(Long.valueOf(rm)).orElseThrow(()->{
+                   throw new BusinessException("raw material avec id: "+rm+" n'exist pas.");
+               });
+               supplier.getRawMaterials().add(rawMaterial);
+           }
+        });
         Supplier saved = supplierRepository.save(supplier);
+
         return supplierMapper.toResponseDTO(saved);
     }
 
@@ -41,7 +61,20 @@ public class SupplierServiceImpl implements ISupplierService {
 
         existing.setName(supplierDTO.getName());
         existing.setContact(supplierDTO.getContact());
+        existing.setRating(supplierDTO.getRating());
         existing.setLeadTime(supplierDTO.getLeadTime());
+        supplierDTO.getRawMaterialId().stream().filter(rm->rm!=null && rm!=0).forEach(rm->{
+
+
+                   RawMaterial rawMaterial=rawMaterialRepository.findById(Long.valueOf(rm)).orElseThrow(()->{
+                       throw new BusinessException("raw material avec id: "+rm+" n'exist pas.");
+                   });
+
+                if(!existing.getRawMaterials().contains(rawMaterial)){
+                    existing.getRawMaterials().add(rawMaterial);
+                }
+
+        });
 
         Supplier updated = supplierRepository.save(existing);
         return supplierMapper.toResponseDTO(updated);
