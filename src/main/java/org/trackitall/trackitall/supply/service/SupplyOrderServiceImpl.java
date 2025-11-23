@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-//allArgumentConstructor
 public class SupplyOrderServiceImpl implements ISupplyOrderService {
 
     private final SupplyOrderRepository supplyOrderRepository;
@@ -31,17 +30,21 @@ public class SupplyOrderServiceImpl implements ISupplyOrderService {
     private final RawMaterialMapper rawMaterialMapper;
     @Override
     @Transactional
-    public SupplyOrderResponseDTO createSupplyOrder(SupplyOrderRequestDTO supplyOrderDTO) {
-        Supplier supplier = supplierRepository.findById(supplyOrderDTO.getSupplierId())
+    public SupplyOrderResponseDTO createSupplyOrder(SupplyOrderRequestDTO supplyOrderRequestDTO) {
+        Supplier supplier = supplierRepository.findById(supplyOrderRequestDTO.getSupplierId())
                 .orElseThrow(() -> new NotFoundException("Fournisseur non trouvé"));
 
-        SupplyOrder supplyOrder = supplyOrderMapper.toEntity(supplyOrderDTO);
+        SupplyOrder supplyOrder = supplyOrderMapper.toEntity(supplyOrderRequestDTO);
+        supplyOrder.setStatus(SupplyOrderStatus.EN_ATTENTE);
         supplyOrder.setSupplier(supplier);
 
+
+        supplyOrder.setSupplyOrderRawMaterials(supplyOrderRequestDTO.getItems());
         SupplyOrder savedOrder = supplyOrderRepository.save(supplyOrder);
 
-        if (supplyOrderDTO.getItems() != null) {
-            List<SupplyOrderRawMaterial> orderItems = supplyOrderDTO.getItems().stream()
+
+        if (supplyOrderRequestDTO.getItems() != null) {
+            List<SupplyOrderRawMaterial> orderItems = supplyOrderRequestDTO.getItems().stream()
                     .map(item -> {
                         RawMaterial rawMaterial = rawMaterialRepository.findById(item.getRawMaterialId())
                                 .orElseThrow(() -> new NotFoundException("Matière première non trouvée"));
@@ -64,7 +67,7 @@ public class SupplyOrderServiceImpl implements ISupplyOrderService {
 
     @Override
     @Transactional
-    public SupplyOrderResponseDTO updateSupplyOrder(Long id, SupplyOrderRequestDTO supplyOrderDTO) {
+    public SupplyOrderResponseDTO updateSupplyOrder(Long id, SupplyOrderRequestSimpleDTO supplyOrderDTO) {
         SupplyOrder existing = supplyOrderRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Commande non trouvée"));
 
@@ -155,7 +158,7 @@ public class SupplyOrderServiceImpl implements ISupplyOrderService {
         List<SupplyOrderItemResponseDTO> itemDTOs = orderItems.stream()
                 .map(item -> {
                     SupplyOrderItemResponseDTO itemDTO = new SupplyOrderItemResponseDTO();
-                    itemDTO.setRawMaterial(rawMaterialMapper.toResponseDTO(item.getRawMaterial()));
+                    itemDTO.setRawMaterial(rawMaterialMapper.toResponseSimple(item.getRawMaterial()));
                     itemDTO.setQuantity(item.getQuantity());
                     return itemDTO;
                 })

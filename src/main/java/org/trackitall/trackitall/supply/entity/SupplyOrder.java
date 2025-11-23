@@ -28,11 +28,6 @@ public class SupplyOrder {
     private Supplier supplier;
 
 
-    @ManyToMany
-    @JoinTable(
-            name = "supply_order_raw_materials",
-            joinColumns = @JoinColumn(name = "supply_order_id"),
-            inverseJoinColumns = @JoinColumn(name = "raw_material_id")
-    )
-    private List<RawMaterial> rawMaterials;
+    @OneToMany(mappedBy = "supplyOrder")
+    private List<SupplyOrderRawMaterial> supplyOrderRawMaterials;
 }

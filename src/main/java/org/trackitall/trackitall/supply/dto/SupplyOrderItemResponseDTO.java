@@ -1,4 +1,3 @@
-// SupplyOrderItemResponseDTO.java
 package org.trackitall.trackitall.supply.dto;
 
 import lombok.Data;

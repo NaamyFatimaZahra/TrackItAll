@@ -10,7 +10,7 @@ import java.util.List;
 @Data
 public class SupplyOrderItemRequestDTO {
     @NotNull(message = "L'ID de la matière première est obligatoire")
-    private Integer rawMaterialId;
+    private Long rawMaterialId;
 
     @NotNull(message = "La quantité est obligatoire")
     private Integer quantity;

@@ -2,6 +2,7 @@ package org.trackitall.trackitall.supply.service;
 
 import org.trackitall.trackitall.supply.dto.SupplyOrderRequestDTO;
 import org.trackitall.trackitall.supply.dto.SupplyOrderRequestDTO;
+import org.trackitall.trackitall.supply.dto.SupplyOrderRequestSimpleDTO;
 import org.trackitall.trackitall.supply.dto.SupplyOrderResponseDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,7 +11,7 @@ public interface ISupplyOrderService {
 
     SupplyOrderResponseDTO createSupplyOrder(SupplyOrderRequestDTO supplyOrderDTO);
 
-    SupplyOrderResponseDTO updateSupplyOrder(Long id, SupplyOrderRequestDTO supplyOrderDTO);
+    SupplyOrderResponseDTO updateSupplyOrder(Long id, SupplyOrderRequestSimpleDTO supplyOrderDTO);
 
     void deleteSupplyOrder(Long id);
 

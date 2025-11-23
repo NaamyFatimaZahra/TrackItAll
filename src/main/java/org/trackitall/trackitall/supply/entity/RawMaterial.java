@@ -32,6 +32,6 @@ public class RawMaterial {
     private List<Supplier> suppliers;
 
 
-    @ManyToMany(mappedBy = "rawMaterials")
-    private List<SupplyOrder> supplyOrders;
+    @OneToMany(mappedBy = "rawMaterial")
+    private List<SupplyOrderRawMaterial> supplyOrderRawMaterials;
 }

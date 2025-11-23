@@ -1,6 +1,7 @@
 package org.trackitall.trackitall.supply.controller;
 
 import org.trackitall.trackitall.supply.dto.SupplyOrderRequestDTO;
+import org.trackitall.trackitall.supply.dto.SupplyOrderRequestSimpleDTO;
 import org.trackitall.trackitall.supply.dto.SupplyOrderResponseDTO;
 import org.trackitall.trackitall.supply.service.ISupplyOrderService;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,7 @@ public class SupplyOrderController {
     @PutMapping("/{id}")
     public ResponseEntity<SupplyOrderResponseDTO> updateSupplyOrder(
             @PathVariable Long id,
-            @Valid @RequestBody SupplyOrderRequestDTO supplyOrderDTO) {
+            @Valid @RequestBody SupplyOrderRequestSimpleDTO supplyOrderDTO) {
         SupplyOrderResponseDTO updated = supplyOrderService.updateSupplyOrder(id, supplyOrderDTO);
         return ResponseEntity.ok(updated);
     }
