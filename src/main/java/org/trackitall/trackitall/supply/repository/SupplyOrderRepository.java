@@ -11,10 +11,4 @@ import org.springframework.stereotype.Repository;
 public interface SupplyOrderRepository extends JpaRepository<SupplyOrder, Long> {
 
     Page<SupplyOrder> findAll(Pageable pageable);
-
-    @Query("SELECT so FROM SupplyOrder so WHERE so.supplier.id = :supplierId")
-    Page<SupplyOrder> findBySupplierId(Long supplierId, Pageable pageable);
-
-    @Query("SELECT so FROM SupplyOrder so WHERE so.status = :status")
-    Page<SupplyOrder> findByStatus(String status, Pageable pageable);
 }

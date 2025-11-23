@@ -29,45 +29,42 @@ public class RawMaterialServiceImpl implements IRawMaterialService {
     private final SupplierRepository supplierRepository;
     private final RawMaterialMapper rawMaterialMapper;
 
-    @Transactional
     @Override
+    @Transactional
     public RawMaterialResponseDTO createRawMaterial(RawMaterialRequestDTO rawMaterialDTO) {
-
         if (rawMaterialRepository.findByName(rawMaterialDTO.getName()).isPresent()) {
             throw new BusinessException("Une matière première avec ce nom existe déjà");
         }
-
         RawMaterial rawMaterial = rawMaterialMapper.toEntity(rawMaterialDTO);
-
-        rawMaterial.setSuppliers(new ArrayList<>());
-
-        rawMaterial = rawMaterialRepository.save(rawMaterial);
-
-        for (Long sp : rawMaterialDTO.getSupplierIds()) {
-            if (sp == null || sp == 0) continue;
-
-            Supplier supplier = supplierRepository.findById(sp)
-                    .orElseThrow(() -> new BusinessException("Supplier id " + sp + " n'existe pas."));
-            supplier.getRawMaterials().add(rawMaterial);
-            rawMaterial.getSuppliers().add(supplier);
+        if(rawMaterial.getSuppliers()==null){
+            rawMaterial.setSuppliers(new ArrayList<>());
         }
-        return rawMaterialMapper.toResponseDTO(rawMaterial);
+        rawMaterialDTO.getSupplierIds().stream().filter(sp->sp!=0 && sp!=null).forEach(
+                sp->{
+                    Supplier supplier=supplierRepository.findById(sp).orElseThrow(
+                            ()->new BusinessException( "Supplier avec id " + sp + " n'existe pas.")
+                    );
+                    //for DB
+                    supplier.getRawMaterials().add(rawMaterial);
+                    //for Response
+                    rawMaterial.getSuppliers().add(supplier);
+                }
+        );
+        RawMaterial saved = rawMaterialRepository.save(rawMaterial);
+        return rawMaterialMapper.toResponseDTO(saved);
     }
-
 
     @Override
     @Transactional
     public RawMaterialResponseDTO updateRawMaterial(Long id, RawMaterialRequestDTO rawMaterialDTO) {
         RawMaterial existing = rawMaterialRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Matière première non trouvée"));
-
         existing.setName(rawMaterialDTO.getName());
         existing.setStock(rawMaterialDTO.getStock());
         existing.setStockMin(rawMaterialDTO.getStockMin());
         existing.setUnit(rawMaterialDTO.getUnit());
-
-        RawMaterial updated = rawMaterialRepository.save(existing);
-        return rawMaterialMapper.toResponseDTO(updated);
+        rawMaterialRepository.save(existing);
+        return rawMaterialMapper.toResponseDTO(existing);
     }
 
     @Override
@@ -80,8 +77,11 @@ public class RawMaterialServiceImpl implements IRawMaterialService {
             throw new BusinessException("Impossible de supprimer une matière première utilisée dans des commandes");
         }
 
-        rawMaterial.getSuppliers().forEach(supplier -> supplier.getRawMaterials().remove(rawMaterial));
-        rawMaterial.getSupplyOrders().forEach(order -> order.getRawMaterials().remove(rawMaterial));
+        rawMaterial.getSuppliers().stream().forEach(
+                sp->{
+                    sp.getRawMaterials().remove(rawMaterial);
+                }
+        );
         rawMaterialRepository.delete(rawMaterial);
     }
 

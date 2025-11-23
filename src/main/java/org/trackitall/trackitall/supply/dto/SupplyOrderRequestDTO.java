@@ -17,7 +17,7 @@ public class SupplyOrderRequestDTO {
     private SupplyOrderStatus status;
 
     @NotNull(message = "Le fournisseur est obligatoire")
-    private Long supplierId;
+    private Integer supplierId;
 
     private List<SupplyOrderItemRequestDTO> items;
 }

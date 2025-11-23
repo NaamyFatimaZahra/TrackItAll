@@ -6,6 +6,6 @@ import lombok.Data;
 
 @Data
 public class SupplyOrderItemResponseDTO {
-    private RawMaterialResponseDTO rawMaterial;
+    private RawMaterialResponseSimpleDTO rawMaterial;
     private Integer quantity;
 }

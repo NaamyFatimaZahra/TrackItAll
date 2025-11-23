@@ -10,5 +10,5 @@ public class RawMaterialResponseDTO {
     private Integer stock;
     private Integer stockMin;
     private String unit;
-    private List<SupplierResponseDTO> suppliers;
+    private List<SupplierResponseSimpleDTO> suppliers;
 }

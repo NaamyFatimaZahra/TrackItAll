@@ -13,10 +13,7 @@ public interface RawMaterialMapper {
 
     RawMaterial toEntity(RawMaterialRequestDTO dto);
 
-    @Named("basic")
     RawMaterialResponseDTO toResponseDTO(RawMaterial entity);
 
-    RawMaterialResponseDTO toResponseDTOWithStockInfo(RawMaterial entity);
-    @Named("withStock")
     RawMaterialResponseSimpleDTO toResponseSimple(RawMaterial rawMaterial);
 }

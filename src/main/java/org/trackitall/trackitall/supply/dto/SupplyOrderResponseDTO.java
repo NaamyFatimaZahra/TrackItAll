@@ -12,6 +12,6 @@ public class SupplyOrderResponseDTO {
     private Long id;
     private LocalDate date;
     private SupplyOrderStatus status;
-    private SupplierResponseDTO supplier;
+    private SupplierResponseSimpleDTO supplier;
     private List<SupplyOrderItemResponseDTO> items;
 }
