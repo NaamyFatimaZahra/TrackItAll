@@ -1,6 +1,7 @@
 package org.trackitall.trackitall.supply.service;
 
 import org.trackitall.trackitall.supply.mapper.RawMaterialMapper;
+import org.trackitall.trackitall.supply.mapper.SupplyOrderItemsMapper;
 import org.trackitall.trackitall.supply.service.ISupplyOrderService;
 import org.trackitall.trackitall.supply.dto.*;
 import org.trackitall.trackitall.supply.entity.*;
@@ -15,7 +16,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,81 +34,36 @@ public class SupplyOrderServiceImpl implements ISupplyOrderService {
     private final SupplyOrderRawMaterialRepository supplyOrderRawMaterialRepository;
     private final SupplyOrderMapper supplyOrderMapper;
     private final RawMaterialMapper rawMaterialMapper;
+    private final SupplyOrderItemsMapper supplyOrderItemsMapper;
     @Override
     @Transactional
-    public SupplyOrderResponseDTO createSupplyOrder(SupplyOrderRequestDTO supplyOrderRequestDTO) {
-        Supplier supplier = supplierRepository.findById(supplyOrderRequestDTO.getSupplierId())
+    public SupplyOrderResponseDTO createSupplyOrder(SupplyOrderRequestDTO dto) {
+
+        Supplier supplier = supplierRepository.findById(dto.getSupplierId())
                 .orElseThrow(() -> new NotFoundException("Fournisseur non trouvé"));
 
-        SupplyOrder supplyOrder = supplyOrderMapper.toEntity(supplyOrderRequestDTO);
-        supplyOrder.setStatus(SupplyOrderStatus.EN_ATTENTE);
-        supplyOrder.setSupplier(supplier);
+        SupplyOrder order = supplyOrderMapper.toEntity(dto);
+        order.setStatus(SupplyOrderStatus.EN_ATTENTE);
+        order.setSupplier(supplier);
+        Set<Long> seenRawMaterialIds = new HashSet<>();
 
+        order.setItems(
+                dto.getItems().stream()
+                        .filter(itemDTO -> seenRawMaterialIds.add(itemDTO.getRawMaterialId()))
+                        .map(itemDTO -> {
+                            RawMaterial raw = rawMaterialRepository.findById(itemDTO.getRawMaterialId())
+                                    .orElseThrow(() -> new NotFoundException("Matière première non trouvée"));
 
-        supplyOrder.setSupplyOrderRawMaterials(supplyOrderRequestDTO.getItems());
-        SupplyOrder savedOrder = supplyOrderRepository.save(supplyOrder);
+                            SupplyOrderRawMaterial item = supplyOrderItemsMapper.toEntity(itemDTO);
+                            item.setRawMaterial(raw);
+                            item.setSupplyOrder(order);
+                            return item;
+                        })
+                        .toList()
+        );
+        SupplyOrder saved = supplyOrderRepository.save(order);
 
-
-        if (supplyOrderRequestDTO.getItems() != null) {
-            List<SupplyOrderRawMaterial> orderItems = supplyOrderRequestDTO.getItems().stream()
-                    .map(item -> {
-                        RawMaterial rawMaterial = rawMaterialRepository.findById(item.getRawMaterialId())
-                                .orElseThrow(() -> new NotFoundException("Matière première non trouvée"));
-
-                        SupplyOrderRawMaterial orderItem = new SupplyOrderRawMaterial();
-                        orderItem.setSupplyOrder(savedOrder);
-                        orderItem.setRawMaterial(rawMaterial);
-                        orderItem.setQuantity(item.getQuantity());
-//                        rawMaterial.setStock(rawMaterial.getStock()+item.getQuantity());
-                        rawMaterialRepository.save(rawMaterial);
-                        return orderItem;
-                    })
-                    .collect(Collectors.toList());
-
-            supplyOrderRawMaterialRepository.saveAll(orderItems);
-        }
-
-        return getSupplyOrderById(savedOrder.getId());
-    }
-
-    @Override
-    @Transactional
-    public SupplyOrderResponseDTO updateSupplyOrder(Long id, SupplyOrderRequestSimpleDTO supplyOrderDTO) {
-        SupplyOrder existing = supplyOrderRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Commande non trouvée"));
-
-        if (existing.getStatus() == SupplyOrderStatus.RECUE) {
-            throw new BusinessException("Impossible de modifier une commande déjà livrée");
-        }
-
-        Supplier supplier = supplierRepository.findById(supplyOrderDTO.getSupplierId())
-                .orElseThrow(() -> new NotFoundException("Fournisseur non trouvé"));
-
-        existing.setDate(supplyOrderDTO.getDate());
-        existing.setStatus(supplyOrderDTO.getStatus());
-        existing.setSupplier(supplier);
-
-        if (supplyOrderDTO.getItems() != null) {
-            supplyOrderRawMaterialRepository.deleteBySupplyOrderId(id);
-
-            List<SupplyOrderRawMaterial> orderItems = supplyOrderDTO.getItems().stream()
-                    .map(item -> {
-                        RawMaterial rawMaterial = rawMaterialRepository.findById(item.getRawMaterialId())
-                                .orElseThrow(() -> new NotFoundException("Matière première non trouvée"));
-
-                        SupplyOrderRawMaterial orderItem = new SupplyOrderRawMaterial();
-                        orderItem.setSupplyOrder(existing);
-                        orderItem.setRawMaterial(rawMaterial);
-                        orderItem.setQuantity(item.getQuantity());
-                        return orderItem;
-                    })
-                    .collect(Collectors.toList());
-
-            supplyOrderRawMaterialRepository.saveAll(orderItems);
-        }
-
-        SupplyOrder updated = supplyOrderRepository.save(existing);
-        return getSupplyOrderById(updated.getId());
+        return supplyOrderMapper.toResponseDTO(saved);
     }
 
     @Override
@@ -123,7 +84,7 @@ public class SupplyOrderServiceImpl implements ISupplyOrderService {
     @Transactional(readOnly = true)
     public Page<SupplyOrderResponseDTO> getAllSupplyOrders(Pageable pageable) {
         return supplyOrderRepository.findAll(pageable)
-                .map(this::mapToResponseDTOWithItems);
+                .map(supplyOrderMapper::toResponseDTO);
     }
 
     @Override
@@ -132,39 +93,26 @@ public class SupplyOrderServiceImpl implements ISupplyOrderService {
         SupplyOrder supplyOrder = supplyOrderRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Commande non trouvée"));
 
-        try {
             SupplyOrderStatus newStatus = SupplyOrderStatus.valueOf(status.toUpperCase());
             supplyOrder.setStatus(newStatus);
 
-            SupplyOrder updated = supplyOrderRepository.save(supplyOrder);
-            return getSupplyOrderById(updated.getId());
-        } catch (IllegalArgumentException e) {
-            throw new ValidationException("Statut invalide: " + status);
-        }
+            if(newStatus==SupplyOrderStatus.RECUE){
+                supplyOrder.getItems().stream().forEach(
+                        item->{
+                            item.getRawMaterial().setStock(item.getRawMaterial().getStock()+ item.getQuantity());
+                        }
+                );
+            }
+            return supplyOrderMapper.toResponseDTO(supplyOrder);
+
     }
 
     @Override
-    @Transactional(readOnly = true)
     public SupplyOrderResponseDTO getSupplyOrderById(Long id) {
-        SupplyOrder supplyOrder = supplyOrderRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Commande non trouvée"));
-        return mapToResponseDTOWithItems(supplyOrder);
+        SupplyOrder supplyOrder=supplyOrderRepository.findById(id)
+                .orElseThrow(()->new NotFoundException("Commande non trouvée"));
+        return supplyOrderMapper.toResponseDTO(supplyOrder);
     }
 
-    private SupplyOrderResponseDTO mapToResponseDTOWithItems(SupplyOrder supplyOrder) {
-        SupplyOrderResponseDTO responseDTO = supplyOrderMapper.toResponseDTO(supplyOrder);
 
-        List<SupplyOrderRawMaterial> orderItems = supplyOrderRawMaterialRepository.findBySupplyOrderId(supplyOrder.getId());
-        List<SupplyOrderItemResponseDTO> itemDTOs = orderItems.stream()
-                .map(item -> {
-                    SupplyOrderItemResponseDTO itemDTO = new SupplyOrderItemResponseDTO();
-                    itemDTO.setRawMaterial(rawMaterialMapper.toResponseSimple(item.getRawMaterial()));
-                    itemDTO.setQuantity(item.getQuantity());
-                    return itemDTO;
-                })
-                .collect(Collectors.toList());
-
-        responseDTO.setItems(itemDTOs);
-        return responseDTO;
-    }
 }

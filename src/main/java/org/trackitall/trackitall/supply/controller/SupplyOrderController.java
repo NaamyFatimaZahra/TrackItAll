@@ -25,14 +25,6 @@ public class SupplyOrderController {
         return ResponseEntity.ok(created);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<SupplyOrderResponseDTO> updateSupplyOrder(
-            @PathVariable Long id,
-            @Valid @RequestBody SupplyOrderRequestSimpleDTO supplyOrderDTO) {
-        SupplyOrderResponseDTO updated = supplyOrderService.updateSupplyOrder(id, supplyOrderDTO);
-        return ResponseEntity.ok(updated);
-    }
-
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSupplyOrder(@PathVariable Long id) {
         supplyOrderService.deleteSupplyOrder(id);

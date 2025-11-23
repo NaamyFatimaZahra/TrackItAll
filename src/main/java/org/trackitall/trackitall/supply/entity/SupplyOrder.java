@@ -28,6 +28,6 @@ public class SupplyOrder {
     private Supplier supplier;
 
 
-    @OneToMany(mappedBy = "supplyOrder")
-    private List<SupplyOrderRawMaterial> supplyOrderRawMaterials;
+    @OneToMany(mappedBy = "supplyOrder",cascade = CascadeType.ALL)
+    private List<SupplyOrderRawMaterial> items;
 }

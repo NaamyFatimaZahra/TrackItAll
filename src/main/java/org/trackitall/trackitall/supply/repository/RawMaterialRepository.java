@@ -24,5 +24,5 @@ public interface RawMaterialRepository extends JpaRepository<RawMaterial, Long> 
     @Query("SELECT rm FROM RawMaterial rm WHERE rm.name LIKE %:name%")
     Page<RawMaterial> findByNameContaining(String name, Pageable pageable);
 
-    boolean existsByIdAndSupplyOrdersIsNotEmpty(Long id);
+    boolean existsByIdAndSupplyOrderItemsIsNotEmpty(Long id);
 }

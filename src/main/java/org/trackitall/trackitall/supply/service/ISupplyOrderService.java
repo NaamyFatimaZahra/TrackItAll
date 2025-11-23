@@ -11,8 +11,6 @@ public interface ISupplyOrderService {
 
     SupplyOrderResponseDTO createSupplyOrder(SupplyOrderRequestDTO supplyOrderDTO);
 
-    SupplyOrderResponseDTO updateSupplyOrder(Long id, SupplyOrderRequestSimpleDTO supplyOrderDTO);
-
     void deleteSupplyOrder(Long id);
 
     Page<SupplyOrderResponseDTO> getAllSupplyOrders(Pageable pageable);

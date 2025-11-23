@@ -73,7 +73,7 @@ public class RawMaterialServiceImpl implements IRawMaterialService {
         RawMaterial rawMaterial = rawMaterialRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Matière première non trouvée"));
 
-        if (rawMaterialRepository.existsByIdAndSupplyOrdersIsNotEmpty(id)) {
+        if (rawMaterialRepository.existsByIdAndSupplyOrderItemsIsNotEmpty(id)) {
             throw new BusinessException("Impossible de supprimer une matière première utilisée dans des commandes");
         }
 
