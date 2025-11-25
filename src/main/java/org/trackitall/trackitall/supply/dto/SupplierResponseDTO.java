@@ -1,11 +1,13 @@
 package org.trackitall.trackitall.supply.dto;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
+
 import java.util.List;
 
 @Data
 @Builder
+@RequiredArgsConstructor
+@AllArgsConstructor
 public class SupplierResponseDTO {
     private int id;
     private String name;

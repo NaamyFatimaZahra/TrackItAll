@@ -11,24 +11,10 @@ import org.trackitall.trackitall.production.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring")
-public abstract class ProductionOrderMapper {
+public interface  ProductionOrderMapper {
 
-    @Autowired
-    protected ProductRepository productRepository;
+     ProductionOrder toEntity(ProductionOrderRequestDTO dto);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "status", constant = "EN_ATTENTE")
-    @Mapping(target = "product", source = "productId")
-    public abstract ProductionOrder toEntity(ProductionOrderRequestDTO dto);
+   ProductionOrderResponseDTO toResponseDTO(ProductionOrder entity);
 
-    public abstract ProductionOrderResponseDTO toResponseDTO(ProductionOrder entity);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "status", ignore = true)
-    @Mapping(target = "product", source = "productId")
-    public abstract void updateEntityFromDTO(ProductionOrderRequestDTO dto, @MappingTarget ProductionOrder entity);
-
-    protected Product map(Long productId) {
-        return productRepository.findById(productId).orElse(null);
-    }
 }

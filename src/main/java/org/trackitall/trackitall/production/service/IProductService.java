@@ -12,5 +12,4 @@ public interface IProductService {
     Page<ProductResponseDTO> getAllProducts(Pageable pageable);
     Page<ProductResponseDTO> searchProducts(String searchTerm, Pageable pageable);
     ProductResponseDTO getProductById(Long id);
-    ProductResponseDTO getProductByName(String name);
 }

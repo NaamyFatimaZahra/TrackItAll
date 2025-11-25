@@ -11,17 +11,8 @@ import org.trackitall.trackitall.production.entity.Product;
 
 public interface ProductMapper {
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "billOfMaterials", ignore = true)
-    @Mapping(target = "productionOrders", ignore = true)
-    @Mapping(target = "orders", ignore = true)
     Product toEntity(ProductRequestDTO dto);
 
     ProductResponseDTO toResponseDTO(Product entity);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "billOfMaterials", ignore = true)
-    @Mapping(target = "productionOrders", ignore = true)
-    @Mapping(target = "orders", ignore = true)
-    void updateEntityFromDTO(ProductRequestDTO dto, @MappingTarget Product entity);
 }

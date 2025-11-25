@@ -12,5 +12,5 @@ public class ProductResponseDTO {
     private Double cost;
     private Integer stock;
     private List<BillOfMaterialResponseDTO> billOfMaterials;
-    private Integer activeProductionOrdersCount;
+
 }
