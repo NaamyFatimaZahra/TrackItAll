@@ -3,6 +3,7 @@ package org.trackitall.trackitall.production.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.trackitall.trackitall.production.dto.ProductRequestDTO;
 import org.trackitall.trackitall.production.dto.ProductionOrderRequestDTO;
 import org.trackitall.trackitall.production.dto.ProductionOrderResponseDTO;
 import org.trackitall.trackitall.production.entity.ProductionOrder;
@@ -16,5 +17,8 @@ public interface  ProductionOrderMapper {
      ProductionOrder toEntity(ProductionOrderRequestDTO dto);
 
    ProductionOrderResponseDTO toResponseDTO(ProductionOrder entity);
+
+    void updateEntityFromDTO(ProductionOrderRequestDTO dto, @MappingTarget ProductionOrder entity);
+    ProductionOrderRequestDTO toRequestDTO(ProductionOrder order);
 
 }

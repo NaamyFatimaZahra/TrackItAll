@@ -7,12 +7,15 @@ import org.trackitall.trackitall.production.dto.ProductRequestDTO;
 import org.trackitall.trackitall.production.dto.ProductResponseDTO;
 import org.trackitall.trackitall.production.entity.Product;
 
-@Mapper(componentModel = "spring",uses = {BillOfMaterialMapper.class})
+@Mapper(componentModel = "spring")
 
 public interface ProductMapper {
+
 
     Product toEntity(ProductRequestDTO dto);
 
     ProductResponseDTO toResponseDTO(Product entity);
 
+
+    void updateEntityFromDTO(ProductRequestDTO dto, @MappingTarget Product entity);
 }

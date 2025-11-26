@@ -21,9 +21,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
@@ -72,12 +69,12 @@ public class ProductServiceImpl implements IProductService {
                 .orElseThrow(() -> new NotFoundException("Produit non trouvé avec l'ID: " + id));
 
         productRepository.findByName(productDTO.getName())
-                .filter(p -> !p.getId().equals(id)) // exclure le produit actuel
+                .filter(p -> !p.getId().equals(id))
                 .ifPresent(p -> {
                     throw new BusinessException("Un produit avec ce nom existe déjà : " + productDTO.getName());
                 });
 
-
+        productMapper.updateEntityFromDTO(productDTO, existingProduct);
         if (productDTO.getBillOfMaterials() != null) {
             List<BillOfMaterial> newBoms = productDTO.getBillOfMaterials().stream()
                     .map(bomDTO -> {

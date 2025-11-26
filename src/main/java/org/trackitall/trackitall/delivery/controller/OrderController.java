@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import org.trackitall.trackitall.enums.OrderStatus;
+
 import java.util.List;
 
 @RestController
@@ -56,7 +58,7 @@ public class OrderController {
     }
 
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<OrderResponseDTO>> getOrdersByStatus(@PathVariable String status) {
+    public ResponseEntity<List<OrderResponseDTO>> getOrdersByStatus(@PathVariable OrderStatus status) {
         List<OrderResponseDTO> orders = orderService.getOrdersByStatus(status);
         return ResponseEntity.ok(orders);
     }
@@ -64,7 +66,7 @@ public class OrderController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<OrderResponseDTO> updateOrderStatus(
             @PathVariable Long id,
-            @RequestParam String status) {
+            @RequestParam OrderStatus status) {
         OrderResponseDTO updatedOrder = orderService.updateOrderStatus(id, status);
         return ResponseEntity.ok(updatedOrder);
     }

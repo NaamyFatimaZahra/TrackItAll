@@ -30,29 +30,44 @@ public class ProductionOrderServiceImpl implements IProductionOrderService {
     @Override
     @Transactional
     public ProductionOrderResponseDTO createProductionOrder(ProductionOrderRequestDTO dto) {
+
         if (!checkMaterialsAvailabilityForOrder(dto)) {
             throw new BusinessException("Matériaux insuffisants pour créer l'ordre de production");
         }
 
         ProductionOrder order = productionOrderMapper.toEntity(dto);
+
+        order.setProduct(productRepository.findById(dto.getProductId())
+                .orElseThrow(() -> new NotFoundException("Produit non trouvé avec l'ID: " + dto.getProductId())));
+
+        order.setStatus(ProductionOrderStatus.EN_ATTENTE);
+
         ProductionOrder saved = productionOrderRepository.save(order);
 
         ProductionOrderResponseDTO response = productionOrderMapper.toResponseDTO(saved);
+
         response.setMaterialsAvailable(true);
         response.setEstimatedDuration(calculateEstimatedDuration(saved));
 
         return response;
     }
 
+
     @Override
     @Transactional
     public ProductionOrderResponseDTO updateProductionOrder(Long id, ProductionOrderRequestDTO dto) {
+
         ProductionOrder existing = productionOrderRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Ordre de production non trouvé avec l'ID: " + id));
 
         if (!ProductionOrderStatus.EN_ATTENTE.equals(existing.getStatus())) {
-            throw new ValidationException("Impossible de modifier un ordre de production déjà commencé");
+            throw new BusinessException("Impossible de modifier un ordre de production déjà commencé");
         }
+
+        productionOrderMapper.updateEntityFromDTO(dto, existing);
+
+        existing.setProduct(productRepository.findById(dto.getProductId())
+                .orElseThrow(() -> new NotFoundException("Produit non trouvé avec l'ID: " + dto.getProductId())));
 
         ProductionOrder saved = productionOrderRepository.save(existing);
 
@@ -63,6 +78,7 @@ public class ProductionOrderServiceImpl implements IProductionOrderService {
         return response;
     }
 
+
     @Override
     @Transactional
     public void cancelProductionOrder(Long id) {
@@ -70,7 +86,7 @@ public class ProductionOrderServiceImpl implements IProductionOrderService {
                 .orElseThrow(() -> new NotFoundException("Ordre de production non trouvé avec l'ID: " + id));
 
         if (!ProductionOrderStatus.EN_ATTENTE.equals(existing.getStatus())) {
-            throw new ValidationException("Impossible d'annuler un ordre de production déjà commencé");
+            throw new BusinessException("Impossible d'annuler un ordre de production déjà commencé");
         }
 
         productionOrderRepository.delete(existing);
@@ -83,14 +99,36 @@ public class ProductionOrderServiceImpl implements IProductionOrderService {
                 .orElseThrow(() -> new NotFoundException("Ordre de production non trouvé avec l'ID: " + id));
 
         existing.setStatus(status);
+
+        if (ProductionOrderStatus.EN_PRODUCTION.equals(status)) {
+
+            if (existing.getProduct() == null || existing.getProduct().getBillOfMaterials() == null) {
+                throw new BusinessException("Le produit n'a pas de nomenclature (BOM) définie");
+            }
+
+            existing.getProduct().getBillOfMaterials().forEach(bom -> {
+                int quantityNeeded = bom.getQuantity() * existing.getQuantity();
+                int newStock = bom.getMaterial().getStock() - quantityNeeded;
+
+                if (newStock < 0) {
+                    throw new BusinessException(
+                            "Stock insuffisant pour le matériau : " + bom.getMaterial().getName()
+                    );
+                }
+
+                bom.getMaterial().setStock(newStock);
+            });
+        }
+
         ProductionOrder saved = productionOrderRepository.save(existing);
 
         ProductionOrderResponseDTO response = productionOrderMapper.toResponseDTO(saved);
-        response.setMaterialsAvailable(checkMaterialsAvailabilityForOrder(toRequest(saved)));
+        response.setMaterialsAvailable(checkMaterialsAvailabilityForOrder(productionOrderMapper.toRequestDTO(saved)));
         response.setEstimatedDuration(calculateEstimatedDuration(saved));
 
         return response;
     }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -98,7 +136,7 @@ public class ProductionOrderServiceImpl implements IProductionOrderService {
         return productionOrderRepository.findAll(pageable)
                 .map(order -> {
                     ProductionOrderResponseDTO response = productionOrderMapper.toResponseDTO(order);
-                    response.setMaterialsAvailable(checkMaterialsAvailabilityForOrder(toRequest(order)));
+                    response.setMaterialsAvailable(checkMaterialsAvailabilityForOrder(productionOrderMapper.toRequestDTO(order)));
                     response.setEstimatedDuration(calculateEstimatedDuration(order));
                     return response;
                 });
@@ -111,7 +149,7 @@ public class ProductionOrderServiceImpl implements IProductionOrderService {
                 .orElseThrow(() -> new NotFoundException("Ordre de production non trouvé avec l'ID: " + id));
 
         ProductionOrderResponseDTO response = productionOrderMapper.toResponseDTO(order);
-        response.setMaterialsAvailable(checkMaterialsAvailabilityForOrder(toRequest(order)));
+        response.setMaterialsAvailable(checkMaterialsAvailabilityForOrder(productionOrderMapper.toRequestDTO(order)));
         response.setEstimatedDuration(calculateEstimatedDuration(order));
 
         return response;
@@ -123,7 +161,7 @@ public class ProductionOrderServiceImpl implements IProductionOrderService {
         return productionOrderRepository.findByStatus(status).stream()
                 .map(order -> {
                     ProductionOrderResponseDTO response = productionOrderMapper.toResponseDTO(order);
-                    response.setMaterialsAvailable(checkMaterialsAvailabilityForOrder(toRequest(order)));
+                    response.setMaterialsAvailable(checkMaterialsAvailabilityForOrder(productionOrderMapper.toRequestDTO(order)));
                     response.setEstimatedDuration(calculateEstimatedDuration(order));
                     return response;
                 })
@@ -135,7 +173,7 @@ public class ProductionOrderServiceImpl implements IProductionOrderService {
     public Boolean checkMaterialsAvailability(Long id) {
         ProductionOrder order = productionOrderRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Ordre de production non trouvé avec l'ID: " + id));
-        return checkMaterialsAvailabilityForOrder(toRequest(order));
+        return checkMaterialsAvailabilityForOrder(productionOrderMapper.toRequestDTO(order));
     }
 
     private Boolean checkMaterialsAvailabilityForOrder(ProductionOrderRequestDTO dto) {
@@ -157,12 +195,5 @@ public class ProductionOrderServiceImpl implements IProductionOrderService {
         return order.getProduct().getProductionTime() * order.getQuantity();
     }
 
-    private ProductionOrderRequestDTO toRequest(ProductionOrder order) {
-        ProductionOrderRequestDTO dto = new ProductionOrderRequestDTO();
-        dto.setProductId(order.getProduct().getId());
-        dto.setQuantity(order.getQuantity());
-        dto.setStartDate(order.getStartDate());
-        dto.setEndDate(order.getEndDate());
-        return dto;
-    }
+
 }

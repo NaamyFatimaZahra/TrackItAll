@@ -11,24 +11,12 @@ import org.trackitall.trackitall.delivery.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring")
-public abstract class DeliveryMapper {
+public interface DeliveryMapper {
 
-    @Autowired
-    protected OrderRepository orderRepository;
+     Delivery toEntity(DeliveryRequestDTO dto);
+     DeliveryResponseDTO toResponseDTO(Delivery entity);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "status", constant = "PLANIFEE")
-    @Mapping(target = "order", source = "orderId")
-    public abstract Delivery toEntity(DeliveryRequestDTO dto);
 
-    public abstract DeliveryResponseDTO toResponseDTO(Delivery entity);
+     void updateEntityFromDTO(DeliveryRequestDTO dto, @MappingTarget Delivery entity);
 
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "status", ignore = true)
-    @Mapping(target = "order", source = "orderId")
-    public abstract void updateEntityFromDTO(DeliveryRequestDTO dto, @MappingTarget Delivery entity);
-
-    protected Order map(Long orderId) {
-        return orderRepository.findById(orderId).orElse(null);
-    }
 }
